@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shinobi-dfa"
+version = "0.1.0"
+description = "Shinobi: a DFA formal description language and compiler (UTech CIT4004, Sem 1 2026/27)"
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Lashawn Green (2305250)" },
+    { name = "Kimberly Bruce (1909007)" },
+    { name = "Javaine Robinson (2304749)" },
+]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+shinobi = "shinobi.semantic:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

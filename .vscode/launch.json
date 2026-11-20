@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Shinobi: compile current .shinobi file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": ["${file}"],
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Shinobi: compile + test an input string",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": ["${file}", "${input:inputString}"],
+      "cwd": "${workspaceFolder}",
+      "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    { "id": "inputString", "type": "promptString", "description": "Input string to run through the DFA" }
+  ]
+}

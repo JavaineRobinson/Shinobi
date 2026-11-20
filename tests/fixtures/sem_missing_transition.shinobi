@@ -1,0 +1,8 @@
+CLAN = {q0, q1};
+CHAKRA = {a, b};
+JUTSU = {
+    (q0, a) -> q1, (q0, b) -> q0,
+    (q1, a) -> q0
+};
+ORIGIN = q0;
+AWAKENED = {q1};

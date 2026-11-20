@@ -1,0 +1,16 @@
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.DS_Store
+._*
+__MACOSX/
+out/
+*.dot
+*.svg
+*.png
+!docs/**/*.png
+docs/brief/APL Project 2026-2027 Sem 1 v6.pdf

@@ -1,0 +1,11 @@
+CLAN = {q1, q2, q3, q4, Trap};
+CHAKRA = {a, b, c};
+JUTSU = {
+    (q1, a) -> q2, (q1, b) -> q3, (q1, c) -> Trap,
+    (q2, a) -> q4, (q2, b) -> Trap, (q2, c) -> q2,
+    (q3, a) -> Trap, (q3, b) -> q4, (q3, c) -> q3,
+    (q4, a) -> Trap, (q4, b) -> Trap, (q4, c) -> Trap,
+    (Trap, a) -> Trap, (Trap, b) -> Trap, (Trap, c) -> Trap
+};
+ORIGIN = q1;
+AWAKENED = q4;
