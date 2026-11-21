@@ -1,0 +1,8 @@
+# A DFA with no accepting states: every input is rejected
+M = {
+CLAN = {q0, q1};
+CHAKRA = {a};
+JUTSU = { (q0, a) -> q1, (q1, a) -> q0 };
+ORIGIN = q0;
+AWAKENED = {};
+};

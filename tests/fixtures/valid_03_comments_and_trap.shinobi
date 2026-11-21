@@ -1,0 +1,8 @@
+M = {
+# DFA with a trap state
+CLAN = {s1, s2, Trap};
+CHAKRA = {a};
+JUTSU = { (s1, a) -> s2, (s2, a) -> Trap, (Trap, a) -> Trap };
+ORIGIN = s1;
+AWAKENED = {s2};
+};

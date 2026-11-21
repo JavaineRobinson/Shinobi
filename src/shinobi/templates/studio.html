@@ -1,0 +1,937 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shinobi Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+<script>
+  // pick the theme before the page paints, so there is no flash
+  (function () {
+    var t = null;
+    try { t = localStorage.getItem("shinobi-theme"); } catch (e) {}
+    if (!t) t = window.matchMedia && matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+    document.documentElement.dataset.theme = t;
+  })();
+</script>
+<script src="/static/vendor/viz-global.js" defer></script>
+<script>const EXAMPLE_LIST = {{ examples|tojson }}; const EXAMPLES = Object.fromEntries(EXAMPLE_LIST);</script>
+{% raw %}
+<style>
+:root {
+  --ui: "Zen Kaku Gothic New", ui-sans-serif, -apple-system, "Hiragino Sans", "Segoe UI", sans-serif;
+  --code: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --r-lg: 14px; --r-md: 9px; --r-sm: 6px;
+  --gutter: 48px;
+  --lh: 22px;
+}
+[data-theme="light"] {
+  --bg: #eef1f6;          /* cool washi */
+  --panel: #ffffff;
+  --panel-2: #f6f8fb;
+  --ink: #1b2440;         /* sumi-indigo ink */
+  --muted: #5d6680;
+  --faint: #8a93a8;
+  --line: #dde2ec;
+  --indigo: #2c4a8c;      /* aizome */
+  --indigo-soft: #e4eaf7;
+  --indigo-ink: #ffffff;
+  --shu: #c3342a;         /* seal vermilion */
+  --shu-soft: #fbe9e7;
+  --moss: #2d7a52;
+  --moss-soft: #e3f2ea;
+  --gold: #9a6d0c;
+  --sel: rgba(44, 74, 140, .16);
+  --shadow: 0 1px 0 rgba(27, 36, 64, .04), 0 8px 24px -12px rgba(27, 36, 64, .18);
+  --node-fill: #ffffff;
+}
+[data-theme="dark"] {
+  --bg: #0c1222;          /* indigo night */
+  --panel: #131b30;
+  --panel-2: #18223b;
+  --ink: #e6e9f2;
+  --muted: #9aa4bd;
+  --faint: #6f7a95;
+  --line: #243050;
+  --indigo: #8eaaf0;
+  --indigo-soft: #1f2c52;
+  --indigo-ink: #0c1222;
+  --shu: #f0695b;
+  --shu-soft: #3a1c22;
+  --moss: #5cc391;
+  --moss-soft: #15332a;
+  --gold: #e2b54d;
+  --sel: rgba(142, 170, 240, .22);
+  --shadow: 0 1px 0 rgba(0, 0, 0, .2), 0 10px 30px -14px rgba(0, 0, 0, .6);
+  --node-fill: #18223b;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 var(--ui); -webkit-font-smoothing: antialiased;
+  display: grid; grid-template-rows: auto 1fr auto; min-height: 100vh;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--indigo); outline-offset: 2px; }
+
+/* ---------- top bar ---------- */
+.top {
+  display: flex; align-items: center; gap: 14px; padding: 10px 18px;
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.brand { display: flex; align-items: center; gap: 10px; margin-right: 6px; }
+.seal-logo {
+  width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center;
+  background: var(--shu); color: #fff; font-size: 20px; font-weight: 700; line-height: 1;
+  transform: rotate(-4deg); box-shadow: inset 0 0 0 2px rgba(255,255,255,.35);
+}
+.brand b { font-size: 18px; letter-spacing: .01em; }
+.brand b { white-space: nowrap; }
+.top .spacer { flex: 1; }
+
+.btn {
+  display: inline-flex; align-items: center; gap: 7px; height: 34px; padding: 0 12px;
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel);
+  cursor: pointer; font-size: 14px; white-space: nowrap;
+}
+.btn:hover { background: var(--panel-2); }
+.btn svg { width: 16px; height: 16px; flex: none; }
+.btn.primary { background: var(--indigo); border-color: var(--indigo); color: var(--indigo-ink); font-weight: 700; }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.icon { width: 34px; padding: 0; justify-content: center; }
+.btn.sm { height: 30px; padding: 0 10px; font-size: 13px; }
+select.btn.sm { background-position: calc(100% - 15px) 13px, calc(100% - 10px) 13px; max-width: 170px; }
+.btn kbd { font: 11px var(--code); opacity: .7; }
+select.btn { padding-right: 28px; appearance: none; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 15px, calc(100% - 10px) 15px; background-size: 5px 5px; background-repeat: no-repeat; max-width: 260px; }
+.toggle { white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); cursor: pointer; user-select: none; }
+.toggle input { accent-color: var(--indigo); width: 15px; height: 15px; }
+
+/* ---------- pipeline strip (a real sequence: stage 1 feeds stage 2 ...) ---------- */
+.pipeline { display: flex; align-items: center; gap: 0; }
+.stage {
+  white-space: nowrap; display: flex; align-items: center; gap: 7px; padding: 5px 11px; border-radius: 999px;
+  font-size: 13px; color: var(--faint); background: transparent; border: 1px solid transparent;
+  transition: background .2s, color .2s;
+}
+.stage i { width: 18px; height: 18px; border-radius: 50%; display: grid; place-items: center; font-style: normal; font-size: 11px; font-weight: 700; border: 1.5px solid currentColor; }
+.stage.pass { color: var(--moss); }
+.stage.pass i { background: var(--moss); border-color: var(--moss); color: var(--panel); }
+.stage.fail { color: var(--shu); background: var(--shu-soft); border-color: color-mix(in srgb, var(--shu) 35%, transparent); font-weight: 700; }
+.stage.fail i { background: var(--shu); border-color: var(--shu); color: #fff; }
+.link { width: 22px; height: 1.5px; background: var(--line); }
+.link.pass { background: var(--moss); }
+
+/* ---------- workspace ---------- */
+.work {
+  display: grid; grid-template-columns: minmax(360px, 5fr) minmax(420px, 7fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 14px; padding: 14px; min-height: 0;
+}
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--shadow); display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.panel-head { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.panel-head h2 { margin: 0; font-size: 14px; font-weight: 700; }
+.panel-head .name { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.panel-head .spacer { flex: 1; }
+
+/* ---------- editor ---------- */
+.editor { position: relative; flex: 1; min-height: 140px; background: var(--panel); }
+.gutter, .hl, .editor textarea {
+  position: absolute; top: 0; bottom: 0; margin: 0; border: 0;
+  font: 14px/var(--lh) var(--code); tab-size: 2; padding: 12px 0;
+}
+.gutter { left: 0; width: var(--gutter); overflow: hidden; text-align: right; color: var(--faint); background: var(--panel-2); border-right: 1px solid var(--line); user-select: none; }
+.gutter div { height: var(--lh); padding-right: 10px; }
+.gutter div.err { color: var(--shu); font-weight: 700; background: var(--shu-soft); }
+.gutter div.cur { color: var(--ink); }
+.hl, .editor textarea { left: var(--gutter); right: 0; padding-left: 14px; padding-right: 14px; white-space: pre; overflow: auto; }
+.hl { pointer-events: none; overflow: hidden; color: var(--ink); }
+.hl .line { height: var(--lh); }
+.hl .line.err { background: var(--shu-soft); }
+.editor textarea { resize: none; background: transparent; color: transparent; caret-color: var(--ink); outline: none; }
+.editor textarea::selection { background: var(--sel); color: transparent; }
+.t-kw { color: var(--indigo); font-weight: 600; }
+.t-name { color: var(--ink); }
+.t-num { color: var(--gold); }
+.t-com { color: var(--faint); font-style: italic; }
+.t-eps { color: var(--shu); font-weight: 600; }
+.t-arrow { color: var(--indigo); }
+.t-punct { color: var(--muted); }
+.t-bad { color: var(--shu); }
+.mark { text-decoration: wavy underline var(--shu); text-decoration-thickness: 1.5px; text-underline-offset: 4px; }
+.mark-end { display: inline-block; width: 8px; height: var(--lh); vertical-align: top; border-bottom: 2px solid var(--shu); }
+
+/* ---------- problems ---------- */
+.problems { border-top: 1px solid var(--line); max-height: 40%; min-height: 88px; overflow: auto; flex: none; }
+.problems-head { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-size: 13px; font-weight: 700; position: sticky; top: 0; background: var(--panel); }
+.count { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; display: inline-grid; place-items: center; font-size: 12px; background: var(--shu); color: #fff; }
+.count.zero { background: var(--moss); }
+.problems ul { list-style: none; margin: 0; padding: 0 8px 8px; }
+.problems li button {
+  width: 100%; text-align: left; display: grid; grid-template-columns: auto auto 1fr; gap: 10px; align-items: baseline;
+  padding: 8px 10px; border: 0; border-radius: var(--r-sm); background: transparent; cursor: pointer; font-size: 14px;
+}
+.problems li button:hover { background: var(--shu-soft); }
+.pill { font-size: 11.5px; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--shu-soft); color: var(--shu); }
+.pos { font: 12.5px var(--code); color: var(--muted); }
+.ok-line { padding: 4px 20px 12px; color: var(--moss); font-size: 14px; }
+
+/* ---------- right side tabs ---------- */
+.tabs { display: flex; gap: 2px; padding: 6px 6px 0; border-bottom: 1px solid var(--line); background: var(--panel); }
+.tab {
+  border: 0; background: transparent; padding: 9px 14px 10px; font-size: 14px; color: var(--muted); cursor: pointer;
+  border-bottom: 2px solid transparent; margin-bottom: -1px;
+}
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--indigo); }
+.tab .n { font-size: 12px; color: var(--faint); margin-left: 4px; font-weight: 400; }
+.tab-tools { margin-left: auto; display: flex; gap: 6px; align-items: center; padding-bottom: 6px; }
+.view { flex: 1; min-height: 0; overflow: auto; position: relative; }
+.view[hidden] { display: none; }
+
+/* diagram */
+.canvas { position: absolute; inset: 0; overflow: hidden; cursor: grab;
+  background-image: radial-gradient(color-mix(in srgb, var(--faint) 35%, transparent) 1px, transparent 1px);
+  background-size: 22px 22px; }
+.canvas.dragging { cursor: grabbing; }
+.stage-svg { position: absolute; left: 0; top: 0; transform-origin: 0 0; }
+.stage-svg svg { display: block; overflow: visible; }
+.stage-svg svg .graph > polygon { fill: transparent; stroke: none; }
+.stage-svg svg .graph > text { fill: var(--muted); font: 700 15px var(--ui); }
+.stage-svg svg text { fill: var(--ink); font-family: var(--code); font-size: 13px; }
+.stage-svg svg .node ellipse { fill: var(--node-fill); stroke: var(--ink); stroke-width: 1.4; transition: fill .25s, stroke .25s; }
+.stage-svg svg .node.start-dot ellipse { fill: var(--ink); }
+.stage-svg svg .edge path { stroke: var(--faint); stroke-width: 1.4; transition: stroke .25s; }
+.stage-svg svg .edge polygon { fill: var(--faint); stroke: var(--faint); }
+.stage-svg svg .edge text { fill: var(--muted); }
+.stage-svg svg .node.is-current ellipse { fill: var(--indigo-soft); stroke: var(--indigo); stroke-width: 2.6; }
+.stage-svg svg .node.is-current text { fill: var(--indigo); font-weight: 600; }
+.stage-svg svg .node.is-end-accept ellipse { fill: var(--moss-soft); stroke: var(--moss); }
+.stage-svg svg .node.is-end-reject ellipse { fill: var(--shu-soft); stroke: var(--shu); }
+.stage-svg svg .edge.is-taken path { stroke: var(--indigo); stroke-width: 2.6; }
+.stage-svg svg .edge.is-taken polygon { fill: var(--indigo); stroke: var(--indigo); }
+.stage-svg svg .edge.is-taken text { fill: var(--indigo); font-weight: 600; }
+.zoom { position: absolute; right: 12px; bottom: 12px; display: flex; flex-direction: column; gap: 6px; }
+.zoom .btn { background: var(--panel); box-shadow: var(--shadow); }
+.empty { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 30px; color: var(--muted); }
+.empty[hidden] { display: none; }
+.dnote { position: absolute; left: 12px; bottom: 12px; max-width: 60%; font-size: 12.5px; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: var(--r-sm); padding: 5px 9px; }
+.dnote[hidden] { display: none; }
+.empty div { max-width: 360px; }
+.empty b { display: block; color: var(--ink); font-size: 16px; margin-bottom: 4px; }
+
+/* tables */
+.tbl-wrap { padding: 16px; }
+table.grid { border-collapse: separate; border-spacing: 0; font: 14px var(--code); }
+table.grid th, table.grid td { padding: 8px 14px; border-bottom: 1px solid var(--line); text-align: left; }
+table.grid thead th { position: sticky; top: 0; background: var(--panel); color: var(--muted); font: 700 13px var(--ui); border-bottom: 1.5px solid var(--line); }
+table.grid tbody th { font-weight: 600; white-space: nowrap; }
+table.grid td.hit { background: var(--indigo-soft); color: var(--indigo); font-weight: 600; border-radius: 4px; }
+table.grid tr.row-hit th { color: var(--indigo); }
+.mark-start { color: var(--indigo); margin-right: 6px; }
+.mark-acc { color: var(--moss); margin-left: 4px; }
+.legend { margin: 12px 0 0; color: var(--muted); font-size: 13px; }
+.tok-type { color: var(--indigo); }
+.tok-pos { color: var(--faint); }
+.tok-row { cursor: pointer; }
+.tok-row:hover td { background: var(--panel-2); }
+
+/* AST tree */
+.tree { padding: 14px 16px; font: 13.5px/1.7 var(--code); }
+.tree details { margin-left: 16px; }
+.tree > details { margin-left: 0; }
+.tree summary { cursor: pointer; list-style: none; }
+.tree summary::before { content: "▸"; display: inline-block; width: 14px; color: var(--faint); transition: transform .15s; }
+.tree details[open] > summary::before { transform: rotate(90deg); }
+.tree .k { color: var(--muted); }
+.tree .s { color: var(--moss); }
+.tree .num { color: var(--gold); }
+.tree .leaf { margin-left: 30px; }
+.tree .ty { color: var(--indigo); font-weight: 600; }
+
+/* ---------- simulator ---------- */
+.sim { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(300px, 5fr) minmax(420px, 7fr); gap: 0; }
+.sim-run { padding: 14px 16px; border-right: 1px solid var(--line); display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; }
+.sim-run > div:first-child { min-width: 0; }
+.sim-run label { font-size: 13px; color: var(--muted); display: block; margin-bottom: 6px; }
+.sim-input { display: flex; gap: 8px; }
+.sim-input input {
+  flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 1px solid var(--line); border-radius: var(--r-md);
+  background: var(--panel-2); font: 16px var(--code); letter-spacing: .04em;
+}
+.steps { display: flex; gap: 6px; margin-top: 10px; align-items: center; }
+.steps .where { font-size: 13px; color: var(--muted); margin-left: 6px; }
+.hanko {
+  width: 92px; height: 92px; border-radius: 16px; display: grid; place-items: center; text-align: center;
+  border: 3px solid currentColor; color: var(--faint); opacity: .35; transform: rotate(-7deg);
+  font-weight: 700; line-height: 1;
+}
+.hanko .kanji { font-size: 40px; }
+.hanko .word { font-size: 12px; margin-top: 4px; font-weight: 500; }
+.hanko.accepted { color: var(--shu); opacity: 1; box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--shu) 25%, transparent); }
+.hanko.rejected { color: var(--muted); opacity: 1; border-style: dashed; }
+.hanko.stamp { animation: stamp .42s cubic-bezier(.2, 1.4, .4, 1); }
+@keyframes stamp { from { transform: rotate(-16deg) scale(1.6); opacity: 0; } to { transform: rotate(-7deg) scale(1); opacity: 1; } }
+
+.sim-trace { padding: 14px 16px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.trace { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font: 14px var(--code); min-height: 32px; }
+.chip { padding: 3px 9px; border-radius: 999px; background: var(--panel-2); border: 1px solid var(--line); }
+.chip.on { background: var(--indigo); color: var(--indigo-ink); border-color: var(--indigo); }
+.chip.done { border-color: color-mix(in srgb, var(--indigo) 40%, var(--line)); }
+.sym { color: var(--muted); font-size: 12.5px; }
+.sym.on { color: var(--indigo); font-weight: 600; }
+.note { color: var(--muted); font: 13.5px/1.5 var(--ui); }
+.batch { display: flex; gap: 12px; align-items: flex-start; }
+.batch textarea { width: 220px; height: 100px; resize: vertical; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--r-md); background: var(--panel-2); font: 13.5px/1.5 var(--code); }
+.batch ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+.batch li { font: 13px var(--code); padding: 3px 10px; border-radius: 999px; }
+.batch li.a { background: var(--moss-soft); color: var(--moss); }
+.batch li.r { background: var(--shu-soft); color: var(--shu); }
+.batch li.a::before { content: "✓ "; }
+.batch li.r::before { content: "✕ "; }
+.sub { font-size: 13px; color: var(--muted); margin: 0 0 6px; }
+
+/* ---------- status bar ---------- */
+.status { display: flex; gap: 18px; padding: 6px 18px; font-size: 12.5px; color: var(--muted); background: var(--panel); border-top: 1px solid var(--line); }
+.status .right { margin-left: auto; }
+.toast { position: fixed; left: 50%; bottom: 46px; transform: translateX(-50%) translateY(20px); opacity: 0; background: var(--ink); color: var(--panel); padding: 8px 14px; border-radius: var(--r-md); font-size: 14px; transition: .2s; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+@media (max-height: 780px) and (min-width: 921px) {
+  body { display: block; }
+  .work { grid-template-rows: 540px auto; }
+  .sim-run, .sim-trace { padding-top: 10px; padding-bottom: 10px; }
+}
+@media (max-width: 1100px) {
+  .pipeline .stage span { display: none; }
+  .toggle span { display: none; }
+}
+@media (max-width: 920px) {
+  .work, .sim { grid-template-columns: 1fr; }
+  body { display: block; }
+  .work { grid-template-rows: none; padding: 10px; gap: 10px; min-height: auto; }
+  .panel { min-height: auto; }
+  .panel-head { flex-wrap: wrap; }
+  .panel-head .name { display: none; }
+  .view { flex: none; height: 440px; }
+  .editor { min-height: 380px; }
+  .tabs { overflow-x: auto; }
+  .tab { white-space: nowrap; }
+  .hanko { width: 76px; height: 76px; }
+  .hanko .kanji { font-size: 32px; }
+  .sim-run { border-right: 0; border-bottom: 1px solid var(--line); }
+  .view { min-height: 420px; }
+  .top { flex-wrap: wrap; }
+  .pipeline { order: 10; width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  * { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand"><div class="seal-logo" aria-hidden="true">忍</div><b>Shinobi Studio</b></div>
+  <div class="spacer"></div>
+  <nav class="pipeline" aria-label="Compiler stages">
+    <div class="stage" data-stage="lexical"><i>1</i><span>Lexer</span></div><div class="link"></div>
+    <div class="stage" data-stage="syntax"><i>2</i><span>Parser</span></div><div class="link"></div>
+    <div class="stage" data-stage="semantic"><i>3</i><span>Semantic check</span></div><div class="link"></div>
+    <div class="stage" data-stage="render"><i>4</i><span>Diagram</span></div>
+  </nav>
+  <div class="spacer"></div>
+  <label class="toggle" title="Compile automatically while you type"><input type="checkbox" id="live" checked><span>Check as I type</span></label>
+  <button class="btn primary" id="run">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>Compile <kbd id="kbd">Ctrl ↵</kbd></button>
+  <button class="btn icon" id="theme" title="Switch light / dark" aria-label="Switch light or dark theme">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg></button>
+</header>
+
+<main class="work">
+  <section class="panel" aria-label="Program">
+    <div class="panel-head">
+      <h2>Program</h2><span class="name" id="fname">untitled.shinobi</span><span class="spacer"></span>
+      <select class="btn sm" id="example" aria-label="Load an example"></select>
+      <button class="btn sm" id="open" title="Open a .shinobi file">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7h6l2 2h10v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z"/></svg>Open</button>
+      <button class="btn sm" id="save" title="Save as .shinobi (Ctrl+S)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v3h16v-3"/></svg>Save</button>
+      <input type="file" id="file" accept=".shinobi,.txt" hidden>
+    </div>
+    <div class="editor" id="editor">
+      <div class="gutter" id="gutter" aria-hidden="true"></div>
+      <pre class="hl" id="hl" aria-hidden="true"></pre>
+      <textarea id="src" spellcheck="false" wrap="off" autocapitalize="off" autocomplete="off" aria-label="Shinobi source code"></textarea>
+    </div>
+    <div class="problems" id="problems" aria-live="polite">
+      <div class="problems-head">Problems <span class="count zero" id="pcount">0</span></div>
+      <ul id="plist"></ul>
+    </div>
+  </section>
+
+  <section class="panel" aria-label="Output">
+    <div class="tabs" role="tablist">
+      <button class="tab" role="tab" aria-selected="true" data-view="diagram">Diagram</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="table">Transition table</button>
+      <button class="tab" role="tab" aria-selected="false" data-view="tokens">Tokens<span class="n" id="ntok"></span></button>
+      <button class="tab" role="tab" aria-selected="false" data-view="ast">Syntax tree</button>
+      <div class="tab-tools">
+        <button class="btn" id="dl-svg" title="Download the diagram as SVG">SVG</button>
+        <button class="btn" id="dl-dot" title="Download the Graphviz DOT source">DOT</button>
+      </div>
+    </div>
+    <div class="view" id="v-diagram">
+      <div class="canvas" id="canvas"><div class="stage-svg" id="svgbox"></div></div>
+      <div class="dnote" id="dnote" hidden></div>
+      <div class="empty" id="dempty"><div><b>No diagram yet</b>Compile a program to draw its state diagram.</div></div>
+      <div class="zoom">
+        <button class="btn icon" id="zin" aria-label="Zoom in">+</button>
+        <button class="btn icon" id="zout" aria-label="Zoom out">−</button>
+        <button class="btn icon" id="zfit" aria-label="Fit diagram to view" title="Fit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+      </div>
+    </div>
+    <div class="view" id="v-table" hidden><div class="tbl-wrap" id="table"></div></div>
+    <div class="view" id="v-tokens" hidden><div class="tbl-wrap" id="tokens"></div></div>
+    <div class="view" id="v-ast" hidden><div class="tree" id="ast"></div></div>
+  </section>
+
+  <section class="panel sim" aria-label="Simulator">
+    <div class="sim-run">
+      <div>
+        <label for="input">Test an input string</label>
+        <div class="sim-input">
+          <input id="input" placeholder="e.g. aab" autocomplete="off" spellcheck="false">
+          <button class="btn primary" id="simgo">Run input</button>
+        </div>
+        <div class="steps">
+          <button class="btn icon" id="s-first" aria-label="Back to start" title="Back to start">⏮</button>
+          <button class="btn icon" id="s-prev" aria-label="Previous step" title="Previous step">◀</button>
+          <button class="btn icon" id="s-play" aria-label="Play" title="Play the steps">▶</button>
+          <button class="btn icon" id="s-next" aria-label="Next step" title="Next step">▶|</button>
+          <span class="where" id="where">Type an input and press Run input.</span>
+        </div>
+      </div>
+      <div class="hanko" id="hanko" aria-live="polite"><div><div class="kanji">印</div><div class="word">Verdict</div></div></div>
+    </div>
+    <div class="sim-trace">
+      <div class="trace" id="trace"><span class="note">The path through the states shows here, one step per symbol.</span></div>
+      <div class="note" id="simnote"></div>
+      <div class="batch">
+        <div>
+          <p class="sub">Test many inputs, one per line</p>
+          <textarea id="batch" spellcheck="false" placeholder="aa&#10;ab&#10;bb"></textarea>
+        </div>
+        <ul id="bres" aria-live="polite"></ul>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="status">
+  <span id="cursor">Ln 1, Col 1</span>
+  <span id="dfainfo"></span>
+  <span class="right" id="lastrun">Not compiled yet</span>
+</footer>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const src = $("src"), hl = $("hl"), gutter = $("gutter");
+const isMac = /Mac|iPhone|iPad/.test(navigator.platform);
+$("kbd").textContent = isMac ? "⌘ ↵" : "Ctrl ↵";
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+};
+
+let result = null;          // last response from /api/run
+let errorsByLine = new Map();
+let step = 0;               // simulator position: 0 = before the first symbol
+let playing = null;
+let view = { scale: 1, x: 0, y: 0, fitted: false };
+
+/* ---------------- syntax highlighting ---------------- */
+const KW = new Set(["CLAN", "CHAKRA", "JUTSU", "ORIGIN", "AWAKENED"]);
+const EPS = new Set(["ε", "eps", "epsilon"]);
+const TOKEN_RE = /(#[^\n]*)|(->)|([A-Za-z][A-Za-z0-9_]*)|(ε)|([0-9]+)|([={}(),;])|(\s+)|(.)/g;
+
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+function highlightLine(text, marks) {
+  // marks: set of 1-based columns that carry an error on this line
+  let html = "", m, col = 1, used = new Set();
+  TOKEN_RE.lastIndex = 0;
+  while ((m = TOKEN_RE.exec(text)) !== null) {
+    const tok = m[0], start = col, end = col + tok.length;
+    let cls = "";
+    if (m[1]) cls = "t-com";
+    else if (m[2]) cls = "t-arrow";
+    else if (m[3]) cls = KW.has(tok) ? "t-kw" : EPS.has(tok) ? "t-eps" : "t-name";
+    else if (m[4]) cls = "t-eps";
+    else if (m[5]) cls = "t-num";
+    else if (m[6]) cls = "t-punct";
+    else if (m[8]) cls = "t-bad";
+    let hit = false;
+    for (const c of marks) if (c >= start && c < end && !m[7]) { hit = true; used.add(c); }
+    const body = esc(tok);
+    html += cls || hit ? `<span class="${cls}${hit ? " mark" : ""}">${body}</span>` : body;
+    col = end;
+  }
+  for (const c of marks) if (!used.has(c)) { html += '<span class="mark-end"></span>'; break; }
+  return html;
+}
+
+function paint() {
+  const lines = src.value.split("\n");
+  const curLine = src.value.slice(0, src.selectionStart).split("\n").length;
+  let code = "", nums = "";
+  lines.forEach((line, i) => {
+    const n = i + 1, errCols = errorsByLine.get(n);
+    const marks = errCols ? errCols : new Set();
+    code += `<div class="line${errCols ? " err" : ""}">${highlightLine(line, marks) || " "}</div>`;
+    nums += `<div class="${errCols ? "err" : n === curLine ? "cur" : ""}">${n}</div>`;
+  });
+  hl.innerHTML = code + "<div class='line'> </div>";
+  gutter.innerHTML = nums;
+  syncScroll();
+}
+function syncScroll() { hl.scrollTop = src.scrollTop; hl.scrollLeft = src.scrollLeft; gutter.scrollTop = src.scrollTop; }
+
+function updateCursor() {
+  const before = src.value.slice(0, src.selectionStart).split("\n");
+  $("cursor").textContent = `Ln ${before.length}, Col ${before[before.length - 1].length + 1}`;
+}
+
+/* ---------------- talking to the compiler ---------------- */
+let pending = 0;
+async function compile() {
+  const ticket = ++pending;
+  const inputs = $("batch").value.split("\n").map((s) => s.trim()).filter(Boolean);
+  let res;
+  try {
+    const r = await fetch("/api/run", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source: src.value, input: $("input").value, inputs }),
+    });
+    res = await r.json();
+  } catch (e) {
+    toast("Can't reach the Shinobi server. Is `shinobi studio` still running?");
+    return;
+  }
+  if (ticket !== pending) return;        // a newer compile has started
+  result = res;
+  show();
+}
+
+function show() {
+  const res = result;
+  // problems + editor marks
+  errorsByLine = new Map();
+  res.errors.forEach((e) => {
+    if (!errorsByLine.has(e.line)) errorsByLine.set(e.line, new Set());
+    errorsByLine.get(e.line).add(e.column);
+  });
+  paint();
+  showProblems(res);
+  showPipeline(res);
+  showDiagram(res);
+  showTable(res);
+  showTokens(res);
+  showAst(res);
+  step = res.simulation ? res.simulation.trace.length : 0;
+  showSim(true);
+  showBatch(res);
+  const d = res.dfa;
+  $("dfainfo").textContent = d ? `${d.name}: ${d.states.length} states, ${d.alphabet.length} symbols, ${d.transitions.length} transitions` : "";
+  $("lastrun").textContent = "Compiled at " + new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+}
+
+function showProblems(res) {
+  const n = res.errors.length, list = $("plist");
+  $("pcount").textContent = n;
+  $("pcount").className = "count" + (n ? "" : " zero");
+  list.innerHTML = "";
+  if (!n) {
+    list.innerHTML = `<li class="ok-line">${res.ok ? "No problems. This is a valid DFA." : ""}</li>`;
+    return;
+  }
+  res.errors.forEach((e) => {
+    const li = document.createElement("li"), b = document.createElement("button");
+    b.innerHTML = `<span class="pill"></span><span class="pos"></span><span class="msg"></span>`;
+    b.children[0].textContent = { lexical: "Lexer", syntax: "Parser", semantic: "Semantic", internal: "Internal" }[e.stage] || e.stage;
+    b.children[1].textContent = `${e.line}:${e.column}`;
+    b.children[2].textContent = e.message;
+    b.title = "Go to this place in the program";
+    b.onclick = () => jumpTo(e.line, e.column);
+    li.appendChild(b); list.appendChild(li);
+  });
+}
+
+function showPipeline(res) {
+  const order = ["lexical", "syntax", "semantic", "render"];
+  const failedAt = res.ok ? -1 : order.indexOf(res.errors.length && res.errors[0].stage !== "internal" ? res.errors[0].stage : res.stage);
+  document.querySelectorAll(".stage").forEach((el, i) => {
+    el.classList.remove("pass", "fail");
+    if (res.ok || i < failedAt) el.classList.add("pass");
+    else if (i === failedAt) el.classList.add("fail");
+    el.querySelector("i").textContent = el.classList.contains("pass") ? "✓" : el.classList.contains("fail") ? "!" : String(i + 1);
+  });
+  document.querySelectorAll(".link").forEach((el, i) => el.classList.toggle("pass", res.ok || i < failedAt));
+}
+
+function jumpTo(line, column) {
+  const lines = src.value.split("\n");
+  let offset = 0;
+  for (let i = 0; i < line - 1 && i < lines.length; i++) offset += lines[i].length + 1;
+  offset += Math.max(column - 1, 0);
+  src.focus();
+  src.setSelectionRange(offset, Math.min(offset + 1, src.value.length));
+  src.scrollTop = Math.max((line - 5) * 22, 0);
+  syncScroll(); updateCursor(); paint();
+}
+
+/* ---------------- diagram ---------------- */
+let vizReady = null;
+function browserDraw(dot) {
+  if (!window.Viz) return Promise.reject(new Error("Viz.js did not load"));
+  vizReady = vizReady || Viz.instance();
+  return vizReady.then((viz) => viz.renderString(dot, { format: "svg" }));
+}
+
+function showDiagram(res) {
+  const box = $("svgbox"), empty = $("dempty"), note = $("dnote");
+  note.hidden = true;
+  if (res.ok && !res.svg && res.dot) {
+    // Graphviz isn't installed on the server: draw the same DOT in the browser.
+    const ticket = pending;
+    browserDraw(res.dot).then((svg) => {
+      if (ticket !== pending) return;
+      res.svg = svg.slice(svg.indexOf("<svg"));
+      showDiagram(res); showSim(false);
+      note.textContent = "Drawn in the browser, because Graphviz isn't installed on this computer.";
+      note.hidden = false;
+    }).catch(() => {
+      empty.hidden = false;
+      empty.innerHTML = `<div><b>The diagram couldn't be drawn</b>Graphviz isn't installed on this computer. Install it with <code>brew install graphviz</code>, then restart <code>shinobi studio</code>.</div>`;
+    });
+    box.innerHTML = ""; empty.hidden = false;
+    empty.innerHTML = `<div><b>Drawing…</b></div>`;
+    return;
+  }
+  if (!res.ok || !res.svg) {
+    box.innerHTML = "";
+    empty.hidden = false;
+    const n = res.errors.length;
+    empty.innerHTML = n
+      ? `<div><b>No diagram while there ${n === 1 ? "is 1 problem" : "are " + n + " problems"}</b>Fix ${n === 1 ? "it" : "them"} on the left and the diagram draws itself.</div>`
+      : `<div><b>No diagram yet</b>Compile a program to draw its state diagram.</div>`;
+    return;
+  }
+  empty.hidden = true;
+  const firstDraw = !box.innerHTML;
+  box.innerHTML = res.svg;
+  const svg = box.querySelector("svg");
+  svg.removeAttribute("width"); svg.removeAttribute("height");
+  const vb = svg.viewBox.baseVal;
+  svg.setAttribute("width", vb.width); svg.setAttribute("height", vb.height);
+  box.querySelectorAll(".node").forEach((g) => {
+    const t = g.querySelector("title");
+    if (t && t.textContent === "__start") g.classList.add("start-dot");
+  });
+  if (firstDraw || !view.fitted) fit(); else applyView();
+}
+
+function nodeEl(name) {
+  return [...document.querySelectorAll("#svgbox .node")].find((g) => g.querySelector("title").textContent === name);
+}
+function edgeEl(from, to) {
+  return [...document.querySelectorAll("#svgbox .edge")].find((g) => g.querySelector("title").textContent === `${from}->${to}`);
+}
+
+function applyView() { $("svgbox").style.transform = `translate(${view.x}px, ${view.y}px) scale(${view.scale})`; }
+function fit() {
+  const svg = $("svgbox").querySelector("svg"), c = $("canvas");
+  if (!svg) return;
+  const w = +svg.getAttribute("width"), h = +svg.getAttribute("height");
+  const s = Math.min((c.clientWidth - 60) / w, (c.clientHeight - 60) / h, 1.8);
+  view.scale = Math.max(s, 0.2);
+  view.x = (c.clientWidth - w * view.scale) / 2;
+  view.y = (c.clientHeight - h * view.scale) / 2;
+  view.fitted = true;
+  applyView();
+}
+function zoom(f, cx, cy) {
+  const c = $("canvas").getBoundingClientRect();
+  cx = cx == null ? c.width / 2 : cx; cy = cy == null ? c.height / 2 : cy;
+  const ns = Math.min(Math.max(view.scale * f, 0.2), 5);
+  view.x = cx - (cx - view.x) * (ns / view.scale);
+  view.y = cy - (cy - view.y) * (ns / view.scale);
+  view.scale = ns; applyView();
+}
+(function panAndZoom() {
+  const c = $("canvas");
+  let drag = null;
+  c.addEventListener("pointerdown", (e) => { drag = { x: e.clientX - view.x, y: e.clientY - view.y }; c.classList.add("dragging"); c.setPointerCapture(e.pointerId); });
+  c.addEventListener("pointermove", (e) => { if (!drag) return; view.x = e.clientX - drag.x; view.y = e.clientY - drag.y; applyView(); });
+  c.addEventListener("pointerup", () => { drag = null; c.classList.remove("dragging"); });
+  c.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const r = c.getBoundingClientRect();
+    zoom(e.deltaY < 0 ? 1.1 : 1 / 1.1, e.clientX - r.left, e.clientY - r.top);
+  }, { passive: false });
+  $("zin").onclick = () => zoom(1.2);
+  $("zout").onclick = () => zoom(1 / 1.2);
+  $("zfit").onclick = fit;
+  window.addEventListener("resize", () => { if (view.fitted) fit(); });
+})();
+
+/* ---------------- transition table, tokens, AST ---------------- */
+function showTable(res) {
+  const el = $("table"), d = res.dfa;
+  if (!d) { el.innerHTML = `<p class="note">The transition table appears once the program is a valid DFA.</p>`; return; }
+  const delta = {};
+  d.transitions.forEach((t) => { delta[t.from + "\u0000" + t.symbol] = t.to; });
+  let h = `<table class="grid" id="dtable"><thead><tr><th>δ</th>${d.alphabet.map((a) => `<th>${esc(a)}</th>`).join("")}</tr></thead><tbody>`;
+  d.states.forEach((q) => {
+    const start = q === d.start ? `<span class="mark-start" title="start state">→</span>` : "";
+    const acc = d.accepting.includes(q) ? `<span class="mark-acc" title="accepting state">*</span>` : "";
+    h += `<tr data-q="${esc(q)}"><th>${start}${esc(q)}${acc}</th>${d.alphabet.map((a) => `<td data-a="${esc(a)}">${esc(delta[q + "\u0000" + a] || "")}</td>`).join("")}</tr>`;
+  });
+  h += `</tbody></table><p class="legend">→ start state &nbsp;&nbsp; * accepting state &nbsp;&nbsp; While you step through an input, the transition being used is highlighted.</p>`;
+  el.innerHTML = h;
+}
+
+function showTokens(res) {
+  const el = $("tokens"), toks = res.tokens;
+  $("ntok").textContent = toks ? toks.length : "";
+  if (!toks) { el.innerHTML = `<p class="note">The lexer stopped at the first illegal character, so there are no tokens to show. See Problems.</p>`; return; }
+  let h = `<table class="grid"><thead><tr><th>Position</th><th>Token type</th><th>Text</th></tr></thead><tbody>`;
+  toks.forEach((t) => { h += `<tr class="tok-row" data-l="${t.line}" data-c="${t.column}"><td class="tok-pos">${t.line}:${t.column}</td><td class="tok-type">${t.type}</td><td>${esc(t.value)}</td></tr>`; });
+  el.innerHTML = h + "</tbody></table>";
+  el.querySelectorAll(".tok-row").forEach((tr) => { tr.onclick = () => jumpTo(+tr.dataset.l, +tr.dataset.c); });
+}
+
+function showAst(res) {
+  const el = $("ast");
+  if (!res.ast) {
+    el.innerHTML = `<p class="note">${res.tokens ? "The parser stopped at a syntax error, so there is no syntax tree yet. See Problems." : "Fix the lexical error first. The syntax tree is built from the tokens."}</p>`;
+    return;
+  }
+  el.innerHTML = "";
+  el.appendChild(treeNode("Program", res.ast, 0));
+}
+// The tree shows the program's structure; positions are shown small and grey.
+const at = (o) => (o && o.line ? ` <span class="tok-pos">${o.line}:${o.column}</span>` : "");
+function leaf(html) { const d = document.createElement("div"); d.className = "leaf"; d.innerHTML = html; return d; }
+function branch(summary, children, open) {
+  const det = document.createElement("details"); det.open = open;
+  det.innerHTML = `<summary>${summary}</summary>`;
+  children.forEach((c) => det.appendChild(c));
+  return det;
+}
+function nameLeaf(n) { return leaf(`<span class="s">${esc(n.name)}</span>${at(n)}`); }
+function declNode(d) {
+  const v = d.value, head = `<span class="ty">${d.kind}</span>${at(d)}`;
+  if (d.kind === "ORIGIN") return branch(head, [nameLeaf(v)], true);
+  if (d.kind === "JUTSU") {
+    return branch(`${head} <span class="k">${v.length} transitions</span>`, v.map((t) =>
+      leaf(`(<span class="s">${esc(t.state.name)}</span>, <span class="num">${esc(t.symbol.name)}</span>) → <span class="s">${esc(t.target.name)}</span>${at(t)}`)), false);
+  }
+  return branch(`${head} <span class="k">${v.length ? "{" + v.length + "}" : "{} empty"}</span>`, v.map(nameLeaf), true);
+}
+function treeNode(_key, ast) {
+  const fmt = ast.format === "short" ? "(one-line 5-tuple)" : "(block form)";
+  return branch(`<span class="ty">Program</span> <span class="s">${esc(ast.name.name)}</span> <span class="k">${fmt}</span>`,
+    ast.declarations.map(declNode), true);
+}
+
+/* ---------------- simulator ---------------- */
+function showSim(stamp) {
+  const res = result, sim = res && res.simulation, d = res && res.dfa;
+  document.querySelectorAll("#svgbox .is-current, #svgbox .is-taken, #svgbox .is-end-accept, #svgbox .is-end-reject")
+    .forEach((n) => n.classList.remove("is-current", "is-taken", "is-end-accept", "is-end-reject"));
+  document.querySelectorAll("#dtable .hit, #dtable .row-hit").forEach((n) => n.classList.remove("hit", "row-hit"));
+  const hanko = $("hanko"), trace = $("trace");
+  hanko.className = "hanko";
+  hanko.innerHTML = `<div><div class="kanji">印</div><div class="word">Verdict</div></div>`;
+  $("simnote").textContent = "";
+
+  if (!d) { trace.innerHTML = `<span class="note">Fix the problems to test inputs.</span>`; $("where").textContent = "Waiting for a valid DFA."; return; }
+  if (!sim) {
+    trace.innerHTML = `<span class="chip on">${esc(d.start)}</span><span class="note">&nbsp;Start state. Type an input and press Run input.</span>`;
+    const n = nodeEl(d.start); if (n) n.classList.add("is-current");
+    $("where").textContent = "At the start state.";
+    return;
+  }
+  const t = sim.trace, total = t.length;
+  step = Math.max(0, Math.min(step, total));
+  const current = step === 0 ? d.start : t[step - 1].to;
+
+  // trace chips
+  let h = `<span class="chip ${step === 0 ? "on" : "done"}">${esc(d.start)}</span>`;
+  t.forEach((s, i) => {
+    h += `<span class="sym ${i === step - 1 ? "on" : ""}">—${esc(s.symbol)}→</span><span class="chip ${i === step - 1 ? "on" : i < step ? "done" : ""}">${esc(s.to)}</span>`;
+  });
+  if (!total) h += `<span class="note">&nbsp;Empty input: the DFA stays in the start state.</span>`;
+  trace.innerHTML = h;
+
+  const cn = nodeEl(current); if (cn) cn.classList.add("is-current");
+  if (step > 0) {
+    const e = edgeEl(t[step - 1].from, t[step - 1].to); if (e) e.classList.add("is-taken");
+    const row = document.querySelector(`#dtable tr[data-q="${CSS.escape(t[step - 1].from)}"]`);
+    if (row) { row.classList.add("row-hit"); const cell = row.querySelector(`td[data-a="${CSS.escape(t[step - 1].symbol)}"]`); if (cell) cell.classList.add("hit"); }
+  }
+  const finished = step === total;
+  $("where").textContent = finished ? `Read all ${total} symbol${total === 1 ? "" : "s"}. Ended in ${current}.` : `Step ${step} of ${total}: in state ${current}.`;
+  if (finished) {
+    if (cn) cn.classList.add(sim.accepted ? "is-end-accept" : "is-end-reject");
+    hanko.className = "hanko " + (sim.accepted ? "accepted" : "rejected") + (stamp ? " stamp" : "");
+    hanko.innerHTML = sim.accepted
+      ? `<div><div class="kanji">合</div><div class="word">Accepted</div></div>`
+      : `<div><div class="kanji">否</div><div class="word">Rejected</div></div>`;
+    const stuck = sim.note.startsWith("symbol");
+    $("simnote").textContent = stuck ? `Stopped: ${sim.note}.` : sim.accepted ? `${current} is an accepting state.` : `${current} is not an accepting state.`;
+  }
+}
+function go(n) { stop(); step = n; showSim(result && result.simulation && step === result.simulation.trace.length); }
+function stop() { if (playing) { clearInterval(playing); playing = null; $("s-play").textContent = "▶"; } }
+$("s-first").onclick = () => go(0);
+$("s-prev").onclick = () => go(step - 1);
+$("s-next").onclick = () => go(step + 1);
+$("s-play").onclick = () => {
+  if (playing) { stop(); return; }
+  if (!result || !result.simulation) return;
+  if (step >= result.simulation.trace.length) step = 0;
+  showSim(false);
+  $("s-play").textContent = "❚❚";
+  playing = setInterval(() => {
+    const total = result.simulation.trace.length;
+    if (step >= total) { stop(); return; }
+    step++; showSim(step === total);
+    if (step >= total) stop();
+  }, 700);
+};
+$("simgo").onclick = () => { stop(); compile(); };
+$("input").addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); stop(); compile(); } });
+
+function showBatch(res) {
+  const ul = $("bres"); ul.innerHTML = "";
+  (res.batch || []).forEach((b) => {
+    const li = document.createElement("li");
+    li.className = b.accepted ? "a" : "r";
+    li.textContent = b.input;
+    li.title = (b.accepted ? "Accepted: " : "Rejected: ") + b.note;
+    ul.appendChild(li);
+  });
+}
+let batchTimer = null;
+$("batch").addEventListener("input", () => { clearTimeout(batchTimer); batchTimer = setTimeout(compile, 500); });
+
+/* ---------------- editor behaviour ---------------- */
+let liveTimer = null;
+src.addEventListener("input", () => {
+  errorsByLine = new Map(); paint(); updateCursor();
+  store.set("shinobi-source", src.value);
+  if ($("live").checked) { clearTimeout(liveTimer); liveTimer = setTimeout(compile, 450); }
+});
+src.addEventListener("scroll", syncScroll);
+["click", "keyup"].forEach((ev) => src.addEventListener(ev, () => { updateCursor(); paint(); }));
+src.addEventListener("keydown", (e) => {
+  if (e.key === "Tab") {
+    e.preventDefault();
+    const s = src.selectionStart;
+    src.setRangeText("  ", s, src.selectionEnd, "end");
+    src.dispatchEvent(new Event("input"));
+  }
+});
+document.addEventListener("keydown", (e) => {
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+  if (mod && e.key === "Enter") { e.preventDefault(); compile(); }
+  if (mod && (e.key === "s" || e.key === "S")) { e.preventDefault(); save(); }
+});
+$("live").addEventListener("change", () => store.set("shinobi-live", $("live").checked ? "1" : "0"));
+$("run").onclick = compile;
+
+/* ---------------- tabs ---------------- */
+document.querySelectorAll(".tab").forEach((tab) => {
+  tab.onclick = () => {
+    document.querySelectorAll(".tab").forEach((t) => t.setAttribute("aria-selected", String(t === tab)));
+    document.querySelectorAll(".view").forEach((v) => { v.hidden = v.id !== "v-" + tab.dataset.view; });
+    $("dl-svg").hidden = $("dl-dot").hidden = tab.dataset.view !== "diagram";
+    if (tab.dataset.view === "diagram" && view.fitted) fit();
+  };
+});
+
+/* ---------------- files, examples, theme ---------------- */
+function download(name, text, type) {
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type }));
+  a.download = name; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+function baseName() { return $("fname").textContent.replace(/\.[^.]+$/, "") || "dfa"; }
+function save() { download(baseName() + ".shinobi", src.value, "text/plain"); toast("Saved " + baseName() + ".shinobi to your downloads"); }
+$("save").onclick = save;
+$("dl-svg").onclick = () => {
+  if (!result || !result.svg) { toast("Compile a valid program first."); return; }
+  download(baseName() + ".svg", result.svg, "image/svg+xml"); toast("Downloaded " + baseName() + ".svg");
+};
+$("dl-dot").onclick = () => {
+  if (!result || !result.dot) { toast("Compile a valid program first."); return; }
+  download(baseName() + ".dot", result.dot, "text/vnd.graphviz"); toast("Downloaded " + baseName() + ".dot");
+};
+$("open").onclick = () => $("file").click();
+$("file").onchange = (e) => {
+  const f = e.target.files[0]; if (!f) return;
+  const reader = new FileReader();
+  reader.onload = () => { setSource(String(reader.result), f.name); compile(); toast("Opened " + f.name); };
+  reader.readAsText(f);
+  e.target.value = "";
+};
+
+function setSource(text, name) {
+  src.value = text; $("fname").textContent = name;
+  store.set("shinobi-source", text); store.set("shinobi-fname", name);
+  view.fitted = false; $("svgbox").innerHTML = "";
+  errorsByLine = new Map(); paint(); updateCursor();
+}
+const sel = $("example");
+sel.innerHTML = `<option value="">Examples…</option>` + EXAMPLE_LIST.map(([k]) => `<option>${esc(k)}</option>`).join("");
+sel.onchange = () => {
+  if (!sel.value) return;
+  const name = sel.value.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "").slice(0, 40) + ".shinobi";
+  setSource(EXAMPLES[sel.value], name);
+  $("input").value = sel.value.startsWith("Valid") ? "aa" : "";
+  sel.value = ""; compile();
+};
+
+$("theme").onclick = () => {
+  const t = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = t; store.set("shinobi-theme", t);
+};
+
+let toastTimer = null;
+function toast(msg) {
+  const t = $("toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+/* ---------------- start ---------------- */
+(function init() {
+  if (store.get("shinobi-live") === "0") $("live").checked = false;
+  const saved = store.get("shinobi-source");
+  if (saved) { src.value = saved; $("fname").textContent = store.get("shinobi-fname") || "untitled.shinobi"; }
+  else { src.value = EXAMPLE_LIST[0][1]; $("fname").textContent = "brief_example.shinobi"; $("input").value = "aa"; }
+  paint(); updateCursor(); compile();
+})();
+</script>
+{% endraw %}
+</body>
+</html>

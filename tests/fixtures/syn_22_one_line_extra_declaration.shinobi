@@ -1,0 +1,3 @@
+M = ({q0, q1}, {a, b}, JUTSU, q0, {q1});
+JUTSU = { (q0,a)->q1, (q0,b)->q0, (q1,a)->q0, (q1,b)->q1 };
+ORIGIN = q1;

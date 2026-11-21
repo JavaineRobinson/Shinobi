@@ -1,3 +1,4 @@
+M = {
 CLAN = {q0, q1};
 CHAKRA = {a, b};
 JUTSU = {
@@ -7,3 +8,4 @@ JUTSU = {
 };
 ORIGIN = q0;
 AWAKENED = {q1};
+};

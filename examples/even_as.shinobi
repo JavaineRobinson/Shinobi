@@ -1,3 +1,5 @@
+# Accepts strings over {a, b} with an even number of a's
+EvenAs = {
 CLAN = {q0, q1};
 CHAKRA = {a, b};
 
@@ -10,3 +12,4 @@ JUTSU = {
 
 ORIGIN = q0;
 AWAKENED = {q0};
+};

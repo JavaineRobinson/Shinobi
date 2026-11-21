@@ -1,9 +1,11 @@
 """
-Shinobi DFA language - Semantics
+Shinobi DFA language - semantic analysis stage.
 
 Group members / ID numbers:
     Kimberly Bruce(1909007), Lashawn Green(2305250), Javaine Robinson(2304749)
 """
+
+from .lexer import EPSILON_SPELLINGS
 
 REQUIRED = ["CLAN", "CHAKRA", "JUTSU", "ORIGIN", "AWAKENED"]
 
@@ -44,6 +46,17 @@ def analyze(ast):
                 else:
                     names_seen.append(item["name"])
 
+    # Epsilon may never appear in a DFA: not in the alphabet, not on a transition.
+    for decl in ast["declarations"]:
+        if decl["kind"] == "CHAKRA":
+            for item in decl["value"]:
+                if item["name"] in EPSILON_SPELLINGS:
+                    errors.append({"message": f"epsilon '{item['name']}' cannot be in CHAKRA: a DFA has no epsilon moves", "line": item["line"], "column": item["column"]})
+        elif decl["kind"] == "JUTSU":
+            for t in decl["value"]:
+                if t["symbol"]["name"] in EPSILON_SPELLINGS:
+                    errors.append({"message": f"epsilon transition ({t['state']['name']}, {t['symbol']['name']}) is not allowed in a DFA", "line": t["symbol"]["line"], "column": t["symbol"]["column"]})
+
     if "CLAN" in seen:
         states = []
         for item in seen["CLAN"]["value"]:
@@ -62,12 +75,13 @@ def analyze(ast):
     if "CLAN" in seen and "CHAKRA" in seen and "JUTSU" in seen:
         alphabet = []
         for item in seen["CHAKRA"]["value"]:
-            alphabet.append(item["name"])
+            if item["name"] not in EPSILON_SPELLINGS:   # already reported above
+                alphabet.append(item["name"])
 
         for t in seen["JUTSU"]["value"]:
             if t["state"]["name"] not in states:
                 errors.append({"message": f"transition state '{t['state']['name']}' is not declared in CLAN", "line": t["state"]["line"], "column": t["state"]["column"]})
-            if t["symbol"]["name"] not in alphabet:
+            if t["symbol"]["name"] not in alphabet and t["symbol"]["name"] not in EPSILON_SPELLINGS:
                 errors.append({"message": f"symbol '{t['symbol']['name']}' is not declared in CHAKRA", "line": t["symbol"]["line"], "column": t["symbol"]["column"]})
             if t["target"]["name"] not in states:
                 errors.append({"message": f"transition target '{t['target']['name']}' is not declared in CLAN", "line": t["target"]["line"], "column": t["target"]["column"]})
@@ -88,12 +102,22 @@ def analyze(ast):
                 if (s, a) not in pairs:
                     errors.append({"message": f"missing transition for ({s}, {a})", "line": jutsu["line"], "column": jutsu["column"]})
 
+    # A name cannot be both a state and an alphabet symbol (Kimberly, T05).
+    if "CLAN" in seen and "CHAKRA" in seen:
+        state_names = []
+        for item in seen["CLAN"]["value"]:
+            state_names.append(item["name"])
+
+        for item in seen["CHAKRA"]["value"]:
+            if item["name"] in state_names:
+                errors.append({"message": f"'{item['name']}' is used as both a state and a symbol", "line": item["line"], "column": item["column"]})
+
     return errors
 
 
 def build_dfa(ast):
     """Only call this when analyze(ast) found no errors."""
-    dfa = {"states": [], "alphabet": [], "transitions": {}, "start": None, "accepting": []}
+    dfa = {"name": ast["name"]["name"], "states": [], "alphabet": [], "transitions": {}, "start": None, "accepting": []}
 
     for decl in ast["declarations"]:
         if decl["kind"] == "CLAN":
@@ -148,7 +172,7 @@ def main():
     try:
         ast = parse(tokenize(source, path))
     except LexicalError as exc:
-        print(f"Lexical error: {exc}")
+        print(f"{path}:{exc.line}:{exc.column}: lexical error: {exc.message}")
         return
     except ShinobiSyntaxError as exc:
         print(f"{path}:{exc.line}:{exc.column}: syntax error: {exc.message}")
@@ -162,7 +186,7 @@ def main():
             print(f"{path}:{e['line']}:{e['column']}: semantic error: {e['message']}")
     else:
         dfa = build_dfa(ast)
-        print("Valid DFA")
+        print(f"Valid DFA: {dfa['name']}")
         print("States:", ", ".join(dfa["states"]))
         print("Alphabet:", ", ".join(dfa["alphabet"]))
         print("Start:", dfa["start"])

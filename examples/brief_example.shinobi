@@ -1,3 +1,5 @@
+# The DFA from the project brief, M = { ... }; format
+M = {
 CLAN = {q1, q2, q3, q4, Trap};
 CHAKRA = {a, b, c};
 JUTSU = {
@@ -9,3 +11,4 @@ JUTSU = {
 };
 ORIGIN = q1;
 AWAKENED = q4;
+};

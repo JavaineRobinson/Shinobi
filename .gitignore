@@ -11,6 +11,7 @@ __MACOSX/
 out/
 *.dot
 *.svg
+!docs/images/*.svg
 *.png
-!docs/**/*.png
-docs/brief/APL Project 2026-2027 Sem 1 v6.pdf
+!docs/images/*.png
+docs/brief/*.pdf

@@ -1,0 +1,7 @@
+M = {
+CLAN = {a, q1};
+CHAKRA = {a};
+JUTSU = { (a, a) -> q1, (q1, a) -> a };
+ORIGIN = a;
+AWAKENED = {q1};
+};

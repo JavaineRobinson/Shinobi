@@ -1,0 +1,5 @@
+M = {
+CLAN = {q0, q1};
+CHAKRA = {a};
+JUTSU = { (q0, a) q1 };
+};

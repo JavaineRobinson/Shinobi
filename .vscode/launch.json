@@ -2,27 +2,102 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "Shinobi: compile current .shinobi file",
+      "name": "Shinobi Studio (web IDE)",
       "type": "debugpy",
       "request": "launch",
       "module": "shinobi",
-      "args": ["${file}"],
+      "args": [
+        "studio",
+        "--debug"
+      ],
       "cwd": "${workspaceFolder}",
-      "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
       "console": "integratedTerminal"
     },
     {
-      "name": "Shinobi: compile + test an input string",
+      "name": "Shinobi: check current file",
       "type": "debugpy",
       "request": "launch",
       "module": "shinobi",
-      "args": ["${file}", "${input:inputString}"],
+      "args": [
+        "check",
+        "${file}"
+      ],
       "cwd": "${workspaceFolder}",
-      "env": { "PYTHONPATH": "${workspaceFolder}/src" },
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Shinobi: render current file (out/<name>.svg)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": [
+        "render",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Shinobi: run an input string on current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": [
+        "run",
+        "${file}",
+        "${input:inputString}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Shinobi: show tokens of current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": [
+        "tokens",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "Shinobi: show AST of current file",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "shinobi",
+      "args": [
+        "ast",
+        "${file}"
+      ],
+      "cwd": "${workspaceFolder}",
+      "env": {
+        "PYTHONPATH": "${workspaceFolder}/src"
+      },
       "console": "integratedTerminal"
     }
   ],
   "inputs": [
-    { "id": "inputString", "type": "promptString", "description": "Input string to run through the DFA" }
+    {
+      "id": "inputString",
+      "type": "promptString",
+      "description": "Input string to run through the DFA"
+    }
   ]
 }
